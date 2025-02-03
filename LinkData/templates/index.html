@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fetch Web App {% if data %} | Found {% endif %}</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+    }
+    .container {
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    input {
+      width: 300px;
+      padding: 12px;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #1ee3c7;
+      border: none;
+      padding: 12px 20px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    a button{
+        background: rgb(93, 12, 12);
+    }
+    button:hover {
+      background: #17c2a8;
+    }
+    a button:hover {
+      background: rgb(56, 9, 9);
+    }
+    .error {
+      color: red;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 5px;
+      background-color: #fff;
+      border-radius: 5px;
+    }
+    iframe {
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+  </style>
+  <body>
+    <form action="{% url 'fetch' %}" method="post">
+      {% csrf_token %}
+      <div class="container">
+        <input
+          type="text"
+          placeholder="https://www.example.com/"
+          name="page_url"
+          id="page_url"
+          value="{{ url }}"
+        />
+        <button>GET CODE</button>
+        <a href="{% url 'index' %}"><button>Cancel</button></a>
+      </div>
+      {% if error %}
+      <p class="error">{{ error }} (<a href="{% url 'index' %}">Cancel</a>)</p>
+      {% endif %}
+    </form>
+    <div id="content" style="display: none">
+      {% if data %} {{ data }} {% endif %}
+    </div>
+    <iframe id="outputFrame" {% if not data %} style="display: none;" {% endif %}></iframe>
+    <script>
+      function updateOutput() {
+        const outPutContent = document.getElementById("content").innerText;
+        const baseURL = document.getElementById("page_url").value;
+        if (outPutContent.trim() === "" || baseURL.trim() === "") {
+          return;
+        }
+        const replaceLinks = (html) => {
+          return html
+            .replace(
+              /(href|src|content)=['"]([^'"]+?)['"]/g,
+              (match, attribute, url) => {
+                if (url.startsWith("./") || url.startsWith("/")) {
+                  const newUrl = new URL(url, baseURL).href;
+                  return `${attribute}="${newUrl}"`;
+                }
+                return match;
+              }
+            )
+            .replace(
+              /<(img|link|script)[^>]+(href|src)=['"]([^'"]+?)['"][^>]*>/g,
+              (match, tag, attribute, url) => {
+                if (!/^https?:\/\//.test(url)) {
+                  const newUrl = new URL(url, baseURL).href;
+                  return match.replace(url, newUrl);
+                }
+                return match;
+              }
+            );
+        };
+        const updatedContent = replaceLinks(outPutContent);
+        const iframe = document.getElementById("outputFrame");
+        const iframeDoc =
+          iframe.contentDocument || iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(updatedContent);
+        iframeDoc.close();
+      }
+      updateOutput();
+    </script>
+  </body>
+</html>
