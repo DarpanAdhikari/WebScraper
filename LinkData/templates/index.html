@@ -88,7 +88,7 @@
           value="{{ url }}"
         />
         <button>GET CODE</button>
-        <a href="{% url 'index' %}"><button>Cancel</button></a>
+        <a href="{% url 'index' %}"><button onclick="handleCancel(event)">Cancel</button></a>
       </div>
       {% if error %}
       <p class="error">{{ error }} (<a href="{% url 'index' %}">Cancel</a>)</p>
@@ -137,6 +137,10 @@
         iframeDoc.close();
       }
       updateOutput();
+      function handleCancel(event) {
+        event.preventDefault(); // Prevent form submission
+        window.location.href = "{% url 'index' %}"; // Redirect to the URL
+    }
     </script>
   </body>
 </html>
